@@ -5,9 +5,9 @@
 
 update public.users
 set role = 'staff'
-where email = 'your-staff-account@example.com';
+where email = 'bh@gmail.com';
 
 -- Check that exactly the intended account is staff:
 select id, full_name, email, role
 from public.users
-where email = 'your-staff-account@example.com';
+where email = 'bh@gmail.com';
