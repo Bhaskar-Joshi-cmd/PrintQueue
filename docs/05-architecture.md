@@ -114,6 +114,32 @@ printqueue/
         validation.js
 ```
 
+## 5. Storage architecture
+
+The application uses a private Supabase Storage bucket named `printqueue-documents` for PDF files.
+
+- **Bucket privacy:** The bucket must remain private. No broad policies allowing anonymous access.
+- **Upload workflow:** 
+  1. Frontend calls `POST /jobs/upload-url` with the PDF file metadata.
+  2. Backend authenticates the student, validates PDF type (PDF only) and size (max 10 MB).
+  3. Backend generates a unique storage path: `<user-id>/<random-unique-id>.pdf`
+  4. Backend generates a Supabase signed upload URL using the backend-only secret key.
+  5. Backend returns the signed URL and storage path to the frontend.
+  6. Frontend uploads the PDF directly to Supabase Storage using the signed URL.
+  7. After upload succeeds, frontend submits the print job creation API.
+- **Download workflow:**
+  1. Staff dashboard displays the filename and a Download PDF action.
+  2. Staff clicks Download, triggering `GET /jobs/:id/download-url`.
+  3. Backend authenticates the requester and requires staff role.
+  4. Backend looks up the job from PostgreSQL and obtains the storage path from the database.
+  5. Backend generates a short-lived signed download URL (120 second expiry) using the backend-only secret key.
+  6. Backend returns the temporary URL to the frontend.
+  7. Frontend navigates to the signed URL to download the PDF.
+- **Frontend never receives the backend secret/service-role key.** The frontend uses only the project URL and a public/publishable key to initialize the Supabase client for direct uploads.
+- **Vercel deployment note:** The Express backend on Vercel generates signed URLs using `SUPABASE_SECRET_KEY` from environment variables. The frontend on Vercel uses `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for the direct upload client.
+
+The frontend never accesses the Supabase secret key. All signed URL generation happens in the Express API.
+
 This is a guide, not a demand to create every file before coding. If a file is initially too small, it can stay in the route/controller where it is most understandable. Do not add repositories, service layers, dependency-injection systems, Redux, TypeScript, or microservices.
 
 ## 6. Important design decisions

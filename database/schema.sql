@@ -22,6 +22,9 @@ create table if not exists public.print_jobs (
   print_mode text not null default 'mono' check (print_mode in ('mono', 'color')),
   sides text not null default 'single' check (sides in ('single', 'double')),
   notes varchar(300),
+  document_storage_path text,
+  document_original_name text,
+  document_size bigint,
   status text not null default 'queued'
     check (status in ('queued', 'printing', 'ready_for_pickup', 'completed', 'cancelled')),
   created_at timestamptz not null default now(),
@@ -42,6 +45,12 @@ alter table public.print_jobs enable row level security;
 -- Remove direct table privileges from browser-facing roles for this architecture.
 revoke all on table public.users from anon, authenticated;
 revoke all on table public.print_jobs from anon, authenticated;
+
+-- Add document columns to existing print_jobs table (run if table was created before these columns existed)
+alter table public.print_jobs
+  add column if not exists document_storage_path text,
+  add column if not exists document_original_name text,
+  add column if not exists document_size bigint;
 
 -- The Supabase secret key maps to the elevated server-side service role.
 -- Keep that key in server environment variables only.

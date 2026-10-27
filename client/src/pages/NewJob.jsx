@@ -1,3 +1,5 @@
+// NewJob.jsx — Student submits a print request (label, pages, copies, etc.)
+// and optionally uploads a document file to Supabase storage.
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { apiFetch } from '../api/api'
@@ -16,7 +18,10 @@ function NewJob() {
   })
   const [errors, setErrors] = useState({})
   const [message, setMessage] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [fileInputKey, setFileInputKey] = useState(0)
 
   // Auth guard: redirect to login if not authenticated
   if (!authLoading && !user) {
@@ -48,6 +53,50 @@ function NewJob() {
     return errs
   }
 
+  const validateFile = (file) => {
+    const errs = {}
+    if (!file) {
+      // File is optional — no validation errors
+      return errs
+    } else {
+      const fileName = file.name.toLowerCase()
+      const allowedExtensions = [
+        '.pdf', '.doc', '.docx', '.ppt', '.pptx', '.jpg', '.jpeg', '.png',
+      ]
+      const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'image/jpeg',
+        'image/png',
+      ]
+      const hasValidExt = allowedExtensions.some((ext) => fileName.endsWith(ext))
+      if (!hasValidExt) {
+        errs.file = 'Only PDF, Word, PowerPoint, and image files are allowed.'
+      } else if (file.type && !allowedMimeTypes.includes(file.type)) {
+        errs.file = 'Only PDF, Word, PowerPoint, and image files are allowed.'
+      } else if (file.size > 10 * 1024 * 1024) {
+        errs.file = 'File must be less than 10 MB.'
+      }
+    }
+    return errs
+  }
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]
+    setSelectedFile(file)
+    const fileErrs = validateFile(file)
+    const { file: _, ...restErrors } = errors
+    setErrors({ ...restErrors, ...fileErrs })
+    if (file && !fileErrs.file) {
+      setMessage(`Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`)
+    } else if (file) {
+      setMessage('')
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     const errs = validate()
@@ -57,18 +106,73 @@ function NewJob() {
     }
     setSubmitting(true)
     try {
-      await apiFetch('/jobs', {
-        method: 'POST',
-        body: JSON.stringify({
-          documentName: formData.documentName.trim(),
-          pages: parseInt(formData.pages, 10),
-          copies: parseInt(formData.copies, 10),
-          printMode: formData.printMode,
-          sides: formData.sides,
-          notes: formData.notes.trim() || null,
-        }),
-      })
-      setMessage('Print request created successfully.')
+      // If a file is selected, handle upload workflow
+      if (selectedFile) {
+        const fileErrs = validateFile(selectedFile)
+        if (Object.keys(fileErrs).length > 0) {
+          const { file: _, ...restErrors } = errors
+          setErrors({ ...restErrors, ...fileErrs })
+          setSubmitting(false)
+          return
+        }
+        // Step 1: Get signed upload URL from backend
+        // apiFetch already attaches the Authorization header from localStorage
+        const uploadResponse = await apiFetch('/jobs/upload-url', {
+          method: 'POST',
+          body: JSON.stringify({
+            mimeType: selectedFile.type,
+            fileSize: selectedFile.size,
+            originalName: selectedFile.name,
+          }),
+        })
+        if (!uploadResponse || !uploadResponse.data) {
+          throw new Error('Invalid response from upload-url endpoint.')
+        }
+        const { signedUrl: uploadUrl, storagePath } = uploadResponse.data
+        // Step 2: Upload the file to Supabase Storage using signed URL
+        const upload = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': selectedFile.type,
+            'Authorization': `Bearer ${uploadResponse.data.token}`,
+          },
+          body: selectedFile,
+        })
+        if (!upload.ok) {
+          const body = await upload.text().catch(() => '')
+          throw new Error(`File upload to storage failed (${upload.status}): ${body || upload.statusText}`)
+        }
+        // Step 3: Submit print job with document info
+        await apiFetch('/jobs', {
+          method: 'POST',
+          body: JSON.stringify({
+            documentName: formData.documentName.trim(),
+            pages: parseInt(formData.pages, 10),
+            copies: parseInt(formData.copies, 10),
+            printMode: formData.printMode,
+            sides: formData.sides,
+            notes: formData.notes.trim() || null,
+            document_storage_path: storagePath,
+            document_original_name: selectedFile.name,
+            document_size: selectedFile.size
+          }),
+        })
+        setMessage('Print request created successfully.')
+      } else {
+        // No PDF - submit job without document (existing behavior)
+        await apiFetch('/jobs', {
+          method: 'POST',
+          body: JSON.stringify({
+            documentName: formData.documentName.trim(),
+            pages: parseInt(formData.pages, 10),
+            copies: parseInt(formData.copies, 10),
+            printMode: formData.printMode,
+            sides: formData.sides,
+            notes: formData.notes.trim() || null,
+          }),
+        })
+        setMessage('Print request created successfully.')
+      }
       setFormData({
         documentName: '',
         pages: '',
@@ -77,13 +181,15 @@ function NewJob() {
         sides: 'double',
         notes: '',
       })
+      setSelectedFile(null)
+      setFileInputKey((prev) => prev + 1)
     } catch (err) {
       if (err.status === 401) {
         localStorage.removeItem('token')
         navigate('/login')
         return
       }
-      setMessage(err.message || 'Failed to create print request.')
+      setErrorMessage(String(err.message || 'Failed to create print request.'))
     } finally {
       setSubmitting(false)
     }
@@ -94,7 +200,8 @@ function NewJob() {
       <div className='page-header'>
         <h1>New print request</h1>
       </div>
-      {message && <p className='message success'>{message}</p>}
+      {message && <p className='message success'>{String(message)}</p>}
+      {errorMessage && <p className='message error'>{String(errorMessage)}</p>}
       <form onSubmit={handleSubmit} className='job-form'>
         <div className='field'>
           <label>Document label</label>
@@ -159,6 +266,17 @@ function NewJob() {
             placeholder='Please staple the pages'
           />
           <p className='hint'>Maximum 300 characters. Do not enter private information.</p>
+        </div>
+        <div className='field'>
+          <label>Document file (optional)</label>
+          <input
+            key={fileInputKey}
+            type='file'
+            accept='.pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png'
+            onChange={handleFileChange}
+          />
+          <p className='hint'>Upload a PDF, Word, PowerPoint, or image file (max 10 MB).</p>
+          {errors.file && <span className='error'>{errors.file}</span>}
         </div>
         <div className='form-actions'>
           <button type='submit' className='btn btn-primary' disabled={submitting}>

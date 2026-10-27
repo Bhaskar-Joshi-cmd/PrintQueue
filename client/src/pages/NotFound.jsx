@@ -1,3 +1,4 @@
+// NotFound.jsx — Shown for unknown routes.
 import { Link } from 'react-router-dom'
 
 function NotFound() {

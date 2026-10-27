@@ -1,3 +1,5 @@
+// Central Express error handler.
+// Turns thrown errors into consistent JSON error responses.
 function errorMiddleware(err, req, res, next) {
   console.error(err.stack || err.message || err)
 

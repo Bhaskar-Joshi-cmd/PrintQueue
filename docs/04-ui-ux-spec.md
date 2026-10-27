@@ -61,6 +61,12 @@ Fields and rules:
 - Print mode: Black and white (`mono`, default) or Colour (`color`).
 - Sides: Single-sided (`single`, default) or Double-sided (`double`).
 - Optional note (max 300 characters).
+- **PDF file:**
+  - Accept PDF files only.
+  - Maximum file size 10 MB.
+  - Display selected filename and file size.
+  - Show validation error for invalid files.
+  - Prevent submission when PDF is missing.
 - Submit and Cancel buttons.
 
 Show a short instruction that this form tracks a request and does not upload the document. On successful creation, navigate to the job detail or dashboard and show a success message.

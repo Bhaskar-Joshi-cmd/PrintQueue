@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+// StaffQueue.jsx — Staff view of the print queue. Filter by status, update
+// a job's status (start printing → ready → completed), and download documents.
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { apiFetch } from '../api/api'
 import { useNavigate } from 'react-router-dom'
@@ -15,40 +17,7 @@ function StaffQueue() {
   const [error, setError] = useState(null)
   const [filterStatus, setFilterStatus] = useState('')
 
-  // Auth guard: redirect to login if not authenticated
-  if (!authLoading && !user) {
-    navigate('/login')
-    return null
-  }
-
-  // Staff guard: redirect students to dashboard
-  if (!authLoading && user && user.role !== 'staff') {
-    navigate('/dashboard')
-    return null
-  }
-
-  useEffect(async () => {
-    if (user) {
-      setLoading(true)
-      setError(null)
-      try {
-        const url = `/jobs/queue${filterStatus ? `?status=${filterStatus}` : ''}`
-        const data = await apiFetch(url)
-        setJobs(data.data.jobs || data.data || [])
-      } catch (err) {
-        if (err.status === 401 || err.status === 403) {
-          localStorage.removeItem('token')
-          navigate('/login')
-          return
-        }
-        setError(err.message || 'Failed to load queue.')
-      } finally {
-        setLoading(false)
-      }
-    }
-  }, [filterStatus])
-
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -65,6 +34,24 @@ function StaffQueue() {
     } finally {
       setLoading(false)
     }
+  }, [filterStatus, navigate])
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      fetchJobs()
+    }
+  }, [authLoading, user, fetchJobs])
+
+  // Auth guard: redirect to login if not authenticated
+  if (!authLoading && !user) {
+    navigate('/login')
+    return null
+  }
+
+  // Staff guard: redirect students to dashboard
+  if (!authLoading && user && user.role !== 'staff') {
+    navigate('/dashboard')
+    return null
   }
 
   const handleStatusUpdate = async (jobId, newStatus) => {
@@ -82,6 +69,23 @@ function StaffQueue() {
         return
       }
       setError(err.message || 'Failed to update job status.')
+    }
+  }
+
+  const handleDownload = async (jobId) => {
+    setError(null)
+    try {
+      const data = await apiFetch(`/jobs/${jobId}/download-url`)
+      const downloadUrl = data.data.downloadUrl
+      // Open download in new tab
+      window.open(downloadUrl, '_blank')
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) {
+        localStorage.removeItem('token')
+        navigate('/login')
+        return
+      }
+      setError(err.message || 'Failed to download file.')
     }
   }
 
@@ -145,6 +149,7 @@ function StaffQueue() {
                   <th>Mode / Sides</th>
                   <th>Submitted</th>
                   <th>Status</th>
+                  <th>Document</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -161,6 +166,19 @@ function StaffQueue() {
                       <td>{new Date(job.createdAt).toLocaleString()}</td>
                       <td>
                         <StatusBadge status={job.status} />
+                      </td>
+                      <td>
+                        {job.documentStoragePath && job.status !== 'completed' ? (
+                          <button
+                            className='btn btn-sm btn-outline'
+                            onClick={() => handleDownload(job.id)}
+                            title='Download document'
+                          >
+                            ⬇
+                          </button>
+                        ) : (
+                          <span className='hint' style={{ fontSize: '0.75rem' }}>—</span>
+                        )}
                       </td>
                       <td>
                         {action && (

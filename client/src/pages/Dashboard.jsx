@@ -1,3 +1,5 @@
+// Dashboard.jsx — Student view (job list + cancel) and staff view (queue table).
+// Students see their own jobs; staff see the full print queue.
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { apiFetch } from '../api/api'
@@ -55,29 +57,11 @@ function Dashboard() {
   }, [user, authLoading, isStaff, filterStatus, navigate])
 
   // Load jobs when the user, role, or status filter changes.
-  useEffect(async () => {
+  useEffect(() => {
     if (!authLoading && user) {
-      setLoading(true)
-      setError(null)
-      try {
-        const url = isStaff
-          ? `/jobs/queue${filterStatus ? `?status=${filterStatus}` : ''}`
-          : `/jobs/my${filterStatus ? `?status=${filterStatus}` : ''}`
-        const response = await apiFetch(url)
-        const result = response?.data
-        setJobs(result?.jobs || result || [])
-      } catch (err) {
-        if (err.status === 401) {
-          localStorage.removeItem('token')
-          navigate('/login', { replace: true })
-          return
-        }
-        setError(err.message || 'Failed to load jobs.')
-      } finally {
-        setLoading(false)
-      }
+      fetchJobs()
     }
-  }, [authLoading, user, isStaff, filterStatus, navigate])
+  }, [authLoading, user, fetchJobs])
 
   // Cancel a queued job.
   const handleCancel = async (id) => {
@@ -123,6 +107,23 @@ function Dashboard() {
       }
 
       setError(err.message || 'Failed to update job status.')
+    }
+  }
+
+  // Download a job's document from Supabase storage.
+  const handleDownload = async (jobId) => {
+    setError(null)
+    try {
+      const data = await apiFetch(`/jobs/${jobId}/download-url`)
+      const downloadUrl = data.data.downloadUrl
+      window.open(downloadUrl, '_blank')
+    } catch (err) {
+      if (err.status === 401) {
+        localStorage.removeItem('token')
+        navigate('/login', { replace: true })
+        return
+      }
+      setError(err.message || 'Failed to download file.')
     }
   }
 
@@ -272,6 +273,7 @@ function Dashboard() {
                     <th>Mode / Sides</th>
                     <th>Submitted</th>
                     <th>Status</th>
+                    <th>Document</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -313,6 +315,23 @@ function Dashboard() {
 
                         <td>
                           <StatusBadge status={job.status} />
+                        </td>
+
+                        <td>
+                          {job.documentStoragePath && job.status !== 'completed' ? (
+                            <button
+                              type='button'
+                              className='btn btn-sm btn-outline'
+                              onClick={() => handleDownload(job.id)}
+                              title='Download document'
+                            >
+                              ⬇
+                            </button>
+                          ) : (
+                            <span className='hint' style={{ fontSize: '0.75rem' }}>
+                              —
+                            </span>
+                          )}
                         </td>
 
                         <td>

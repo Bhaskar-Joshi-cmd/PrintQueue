@@ -1,3 +1,4 @@
+// ErrorMessage.jsx — Shows an error message, with an optional Retry button.
 import { useState } from 'react'
 
 function ErrorMessage({ message, onRetry }) {

@@ -1,3 +1,4 @@
+// Register.jsx — Sign up form with validation. Creates a student account.
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Link, useNavigate } from 'react-router-dom'
@@ -12,7 +13,7 @@ function Register() {
   const [errors, setErrors] = useState({})
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const { user, loading: authLoading, _login } = useAuth()
+  const { user, loading: authLoading, register } = useAuth()
   const navigate = useNavigate()
 
   // Auth guard: redirect to login if not authenticated

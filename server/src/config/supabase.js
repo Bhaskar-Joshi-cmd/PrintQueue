@@ -1,3 +1,5 @@
+// Supabase server client (backend only, uses the secret service-role key).
+// Never expose this file or the secret key to the browser.
 const { createClient } = require('@supabase/supabase-js')
 
 const supabaseUrl = process.env.SUPABASE_URL

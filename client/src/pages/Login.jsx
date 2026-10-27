@@ -1,3 +1,4 @@
+// Login.jsx — Log in form. On success stores the token and goes to /dashboard.
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate, Link } from 'react-router-dom'
@@ -6,7 +7,7 @@ function Login() {
   const [formData, setFormData] = useState({ email: '', password: '' })
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const { _login, _user } = useAuth()
+  const { login } = useAuth()
   const navigate = useNavigate()
 
   const handleChange = (e) => {
@@ -19,7 +20,7 @@ function Login() {
     setMessage('')
     setSubmitting(true)
     try {
-      await _login({
+      await login({
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
       })

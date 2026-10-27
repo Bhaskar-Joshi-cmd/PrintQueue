@@ -1,3 +1,4 @@
+// EmptyState.jsx — Shown when a job list has no items.
 function EmptyState({ message }) {
   return (
     <div className='empty-state'>

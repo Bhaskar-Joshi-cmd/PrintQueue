@@ -1,8 +1,10 @@
+// Navbar.jsx — Top navigation: app brand, dashboard/new-job links,
+// current user name/role, and logout button.
 import { Link, useNavigate } from 'react-router-dom'
-import AuthContext from '../context/AuthContext'
+import { useAuth } from '../context/AuthContext'
 
 function Navbar() {
-  const { user, logout } = AuthContext()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
 
   const handleLogout = () => {

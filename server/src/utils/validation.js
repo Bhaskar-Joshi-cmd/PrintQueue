@@ -1,3 +1,5 @@
+// Input validation helpers for registration, login, job creation, and status changes.
+// Each function returns { errors, ..., isValid }.
 function validateRegistration(body) {
   const errors = {}
 

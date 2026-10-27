@@ -1,3 +1,6 @@
+// Auth middleware for Express.
+// authenticateToken: verifies the JWT and attaches req.user.
+// requireStaff: allows access only when req.user.role is 'staff'.
 const jwt = require('jsonwebtoken')
 
 const JWT_SECRET = process.env.JWT_SECRET

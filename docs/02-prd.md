@@ -53,6 +53,11 @@ Public registration always creates a `student` role. The form must not contain a
 | FR-13 | Search a user's job history by document label. | Should |
 | FR-14 | Display an approximate waiting time for a queued job. | Should |
 | FR-15 | Work on common desktop and mobile screen sizes. | Must |
+| | FR-16 | Student can upload a PDF file when creating a print job. | Must |
+| | FR-17 | Staff can download the uploaded PDF for a job. | Must |
+| | FR-18 | PDF files are limited to 10 MB and PDF type only. | Must |
+| | FR-19 | Students can only access their own uploaded documents. | Must |
+| | FR-20 | Students cannot access staff-only download functionality. | Must |
 
 ## 6. Job fields
 - Document label: required, 1–120 characters; it is a label only, not an uploaded file.

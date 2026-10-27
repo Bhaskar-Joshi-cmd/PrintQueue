@@ -1,3 +1,5 @@
+// Auth controllers: register, login, and me (get current user).
+// Hashes passwords with bcrypt, signs JWTs, and talks to Supabase 'users' table.
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 const { supabase } = require('../config/supabase')

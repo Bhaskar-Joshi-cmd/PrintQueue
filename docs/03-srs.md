@@ -35,6 +35,10 @@ The React frontend calls the Express API over HTTPS. The Express API verifies to
 - **SRS-UI-03:** Successful create/update/cancel operations refresh the displayed data.
 - **SRS-UI-04:** The UI shows loading, empty, error and success feedback.
 - **SRS-UI-05:** Refreshing a protected page should restore a still-valid session or send the user back to login if the token is absent/expired.
+- **SRS-UI-06:** Student can select a PDF file when creating a new print job.
+- **SRS-UI-07:** UI validates PDF file type (PDF only), size (max 10 MB), and displays filename and size.
+- **SRS-UI-08:** Staff can see the submitted filename and download the corresponding PDF from the staff dashboard.
+- **SRS-UI-09:** Download link expires after a short period and a fresh link can be requested.
 
 ## 4. Non-functional requirements
 - **NFR-01 Usability:** Main actions should be understandable to a first-time user.

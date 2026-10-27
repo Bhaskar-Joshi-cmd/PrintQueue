@@ -37,6 +37,18 @@ Test manually after each milestone. Use a local test student, a second student, 
 | T-23 | Staff attempts queued → completed | HTTP 409; invalid transition blocked |
 | T-24 | Staff moves printing → ready → completed | Both allowed transitions succeed |
 
+## PDF Upload tests
+
+| ID | Action | Expected result |
+|---|---|---|
+| T-25 | Student uploads a valid PDF file (< 10 MB) | Job created, file stored in Supabase bucket |
+| T-26 | Student uploads a non-PDF file | Validation error: "Only PDF files are allowed." |
+| T-27 | Student uploads a file > 10 MB | Validation error: "File must be less than 10 MB." |
+| T-28 | Unauthenticated user tries to upload print job | HTTP 401: "Access token required." |
+| T-29 | Student tries to download another student's PDF | HTTP 403: "Access denied." |
+| T-30 | Student tries staff-only download functionality | HTTP 403: "Staff access required." |
+| T-31 | Download link expires after 120 seconds | HTTP 410: "Expired link." |
+
 ## UI tests
 
 | ID | Action | Expected result |

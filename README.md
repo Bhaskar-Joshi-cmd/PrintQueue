@@ -1,6 +1,6 @@
 # PrintQueue — Campus Printing Queue & Job Tracker
 
-A beginner-friendly full-stack mini project for the FSD-I course. Students submit print requests and track their status; shop staff see a shared queue and update jobs through the printing workflow.
+A beginner-friendly full-stack mini project for the FSD-I course. Students submit print requests (with an optional document file) and track their status; shop staff see a shared queue and update jobs through the printing workflow.
 
 ## Stack
 
@@ -10,45 +10,63 @@ A beginner-friendly full-stack mini project for the FSD-I course. Students submi
 | Backend | Node.js + Express, REST API |
 | Database | Supabase PostgreSQL (via @supabase/supabase-js) |
 | Auth | bcryptjs password hashing + jsonwebtoken (custom JWT) |
-| Deployment | Two Vercel projects (client/ and server/), Supabase database |
+| Storage | Supabase Storage bucket `printqueue-documents` |
 
 ## Documentation
 
-All project documentation is in Documents/printqueue_project_pack/ (the single source of truth):
-
-- docs/01-project-brief.md
-- docs/02-prd.md
-- docs/03-srs.md
-- docs/04-ui-ux-spec.md
-- docs/05-architecture.md
-- docs/06-database-design.md
-- docs/07-api-contract.md
-- docs/08-security-and-privacy.md
-- docs/09-test-plan.md
-- docs/10-deployment-guide.md
-- docs/11-development-roadmap.md
-- docs/12-beginner-code-guidelines.md
-- docs/13-demo-and-viva.md
-- docs/14-syllabus-mapping.md
-- docs/15-implementation-prompt.md
-- database/schema.sql and database/promote-staff-example.sql
+- `docs/` — 15 design documents (project brief, PRD, SRS, UI/UX, architecture, database design, API contract, security, test plan, deployment guide, roadmap, beginner guidelines, demo & viva, syllabus mapping, implementation prompt)
+- `Documents/` — master documentation (MASTER_DOCUMENTATION.md + Word copy)
+- `database/schema.sql` — SQL to run in Supabase Dashboard → SQL Editor
 
 ## Quick start (local development)
 
-1. Start the backend:
+### 1. Set up environment variables
 
-   
+Copy the example files and fill in your own values:
 
-2. Start the frontend (in a new terminal):
+```bash
+cp server/.env.example server/.env
+cp client/.env.example client/.env
+```
 
-   
+- `server/.env`: set `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `JWT_SECRET`.
+- `client/.env`: set `VITE_API_BASE_URL=http://localhost:5000/api`.
 
-3. Open http://localhost:5173.
+> Never commit real secrets. `.env` files are gitignored.
+
+### 2. Set up the database
+
+Run `database/schema.sql` in Supabase Dashboard → SQL Editor. This creates the `users` and `print_jobs` tables (including document columns) and enables row-level security.
+
+### 3. Create the storage bucket
+
+In Supabase Dashboard → Storage, create a bucket named `printqueue-documents`. Configure CORS to allow `GET` and `PUT` from your client origin (e.g. `http://localhost:5173`).
+
+### 4. Start the backend
+
+```bash
+cd server
+npm install
+npm start
+```
+
+API runs on `http://localhost:5000`.
+
+### 5. Start the frontend (in a new terminal)
+
+```bash
+cd client
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`.
 
 ## Scope boundaries
 
 - Includes: login, student and staff views, job request form, queue, status updates, basic search/filtering, estimated waiting time, validation, error/loading states, deployment.
-- Not included in version 1: online payments, actual printer integration, uploading PDFs, live WebSockets, email/SMS notifications, multiple shop locations, reports/analytics, advanced role-management screens.
+- File uploads are supported: optional document file stored in the Supabase `printqueue-documents` bucket, deleted when a job is completed.
+- Not included: online payments, actual printer integration, live WebSockets, email/SMS notifications, multiple shop locations, reports/analytics.
 
 ## Important course trade-off
 
@@ -56,9 +74,9 @@ The FSD-I syllabus describes MongoDB/Mongoose, but this project uses Supabase Po
 
 ## Where to run things
 
-- Frontend: client/ (Vite + React)
-- Backend: server/ (Express)
-- Database: Supabase (hosted PostgreSQL)
+- Frontend: `client/` (Vite + React)
+- Backend: `server/` (Express)
+- Database & Storage: Supabase (hosted PostgreSQL + Storage)
 
 ## License
 

@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+// JobDetails.jsx — View one job's details, cancel it (owner), download the
+// document (owner/staff), and move the status forward (staff).
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { apiFetch } from '../api/api'
 import { useNavigate, useParams, Link } from 'react-router-dom'
@@ -15,19 +17,7 @@ function JobDetails() {
   const [error, setError] = useState(null)
   const [message, setMessage] = useState('')
 
-  // Auth guard: redirect to login if not authenticated
-  if (!authLoading && !user) {
-    navigate('/login')
-    return null
-  }
-
-  useEffect(() => {
-    if (user) {
-      fetchJob()
-    }
-  }, [id, user, fetchJob])
-
-  const fetchJob = async () => {
+  const fetchJob = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -43,6 +33,18 @@ function JobDetails() {
     } finally {
       setLoading(false)
     }
+  }, [id, user, navigate])
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      fetchJob()
+    }
+  }, [authLoading, user, fetchJob])
+
+  // Auth guard: redirect to login if not authenticated
+  if (!authLoading && !user) {
+    navigate('/login')
+    return null
   }
 
   const handleCancel = async () => {
@@ -101,6 +103,22 @@ function JobDetails() {
         return
       }
       setError(err.message || 'Failed to update status.')
+    }
+  }
+
+  const handleDownload = async () => {
+    setError(null)
+    try {
+      const data = await apiFetch(`/jobs/${id}/download-url`)
+      const downloadUrl = data.data.downloadUrl
+      window.open(downloadUrl, '_blank')
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) {
+        localStorage.removeItem('token')
+        navigate('/login')
+        return
+      }
+      setError(err.message || 'Failed to download file.')
     }
   }
 
@@ -163,6 +181,18 @@ function JobDetails() {
             <StatusBadge status={job.status} />
           </span>
         </div>
+        {job.documentOriginalName && (
+          <div className='detail-row'>
+            <span className='label'>Document file</span>
+            <span className='value'>{job.documentOriginalName}</span>
+          </div>
+        )}
+        {job.documentSize && (
+          <div className='detail-row'>
+            <span className='label'>Document size</span>
+            <span className='value'>{(job.documentSize / 1024 / 1024).toFixed(2)} MB</span>
+          </div>
+        )}
         <div className='detail-row'>
           <span className='label'>Submitted</span>
           <span className='value'>{new Date(job.createdAt).toLocaleString()}</span>
@@ -180,6 +210,14 @@ function JobDetails() {
               Cancel job
             </button>
           </>
+        )}
+        {job.documentStoragePath && job.status !== 'completed' && job.status !== 'cancelled' && (
+          <button
+            className='btn btn-outline'
+            onClick={handleDownload}
+          >
+            ⬇ Download document
+          </button>
         )}
         {isStaff && nextStatus && (
           <button

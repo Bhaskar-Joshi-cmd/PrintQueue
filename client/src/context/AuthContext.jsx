@@ -1,3 +1,5 @@
+// AuthContext.jsx — Holds the logged-in user and token.
+// Provides register, login, logout and the current user via useAuth().
 import { createContext, useContext, useState, useEffect } from 'react'
 import { apiFetch, setAuthToken } from '../api/api'
 
@@ -38,6 +40,12 @@ export function AuthProvider({ children }) {
   }
 
   const login = async (formData) => {
+    // Clear any existing auth state to prevent "last user persists" issue
+    localStorage.removeItem('token')
+    setToken(null)
+    setAuthToken(null)
+    setUser(null)
+    
     const data = await apiFetch('/auth/login', {
       method: 'POST',
       body: JSON.stringify(formData),

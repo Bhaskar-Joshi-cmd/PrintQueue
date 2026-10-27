@@ -1,3 +1,4 @@
+// StatusBadge.jsx — Shows a job's status (queued, printing, etc.) with a color.
 function StatusBadge({ status }) {
   const colors = {
     queued: 'status-queued',

@@ -1,3 +1,4 @@
+// App.jsx — React Router setup. Declares all pages and which path renders each one.
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import './App.css'
 import Navbar from './components/Navbar'

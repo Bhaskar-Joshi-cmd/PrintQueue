@@ -122,6 +122,58 @@ Staff role required. Only allow the next step:
 
 If the requested transition is not valid, return HTTP 409. Update `updated_at`.
 
+## PDF Upload
+
+### Upload URL
+
+`POST /jobs/upload-url`
+
+Student role required.
+
+Request:
+```json
+{
+  "mimeType": "application/pdf",
+  "fileSize": 1572864
+}
+```
+
+The backend must:
+
+1. Authenticate the student using the existing JWT middleware.
+2. Reject unauthorized users and users with inappropriate roles.
+3. Validate the submitted file metadata.
+4. Enforce the allowed PDF type and 10 MB size limit.
+5. Generate a unique storage path on the server, using a safe student-specific folder and a random filename.
+6. Never trust a storage path supplied by the browser.
+7. Generate a Supabase signed upload URL using the backend-only secret/service-role key.
+8. Return the signed upload information and storage path without exposing any privileged credentials.
+
+Success: HTTP 200 with `data` containing `signedUrl`, `storagePath`, `originalName`, `fileSize`.
+
+Error: HTTP 400 for validation errors, HTTP 401 for unauthenticated, HTTP 403 for non-student, HTTP 500 for server errors.
+
+### Download URL
+
+`GET /jobs/:id/download-url`
+
+Staff role required for the staff download workflow.
+
+The backend must:
+
+1. Authenticate the requester.
+2. Require the staff role for the staff download workflow.
+3. Look up the job from PostgreSQL.
+4. Obtain the file path from the trusted database record, not an arbitrary client-provided path.
+5. Generate a short-lived signed download URL for that exact file.
+6. Return the temporary URL to the authorized client.
+
+Success: HTTP 200 with `data` containing `downloadUrl` (short-lived signed URL).
+
+Error: HTTP 401 for unauthenticated, HTTP 403 for non-staff, HTTP 404 for job not found, HTTP 410 for expired link.
+
+Error: HTTP 404 for missing files, HTTP 410 for expired links.
+
 ## HTTP status codes
 - `200 OK`: successful read/update/login.
 - `201 Created`: successful register/create.

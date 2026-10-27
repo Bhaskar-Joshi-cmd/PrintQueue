@@ -1,3 +1,4 @@
+// Auth routes: POST /api/auth/register, POST /api/auth/login, GET /api/auth/me.
 const express = require('express')
 const router = express.Router()
 const { authenticateToken } = require('../middleware/authMiddleware')

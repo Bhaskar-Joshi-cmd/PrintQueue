@@ -1,3 +1,4 @@
+// Home.jsx — Landing page. Redirects logged-in users to their dashboard.
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
